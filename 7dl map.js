@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Семидневный лабиринт CatWar
-// @version      1.3
+// @version      1.4
 // @description  Встроенная карта 7ДЛ
 // @author       Основа была написана игроком Медвянка [406811], доработан и улучшен игроком Горицвет [1705753]
 // @supportURL   https://catwar.su/cat1705753
@@ -54,7 +54,6 @@
     if (!actionData || typeof actionData !== 'object') {
         actionData = {ts: Date.now(), sec: 0};
     } else {
-        // Старый формат {date, sec} → новый {ts, sec}
         if (typeof actionData.ts !== 'number') {
             if (actionData.date) {
                 const parsed = new Date(actionData.date).getTime();
@@ -201,27 +200,91 @@
             'Лабиринт Слабости', 'Лабиринт Забвения'
         ];
 
-        // ---------- Стили панели ----------
+        // ---------- Стили панели (темы через CSS-переменные) ----------
         document.head.insertAdjacentHTML('beforeend', `
             <style>
+                /* ---------- Светлая тема (по умолчанию) ---------- */
+                #cws_7dl_div {
+                    --cws-header-bg:       #6b705c;
+                    --cws-header-text:     #f5f3ee;
+                    --cws-panel-bg:        #dad7cd;
+                    --cws-panel-text:      #344e41;
+                    --cws-border:          #a3b18a;
+
+                    --cws-btn-bg:          #a3b18a;
+                    --cws-btn-text:        #2d332a;
+                    --cws-btn-border:      #8a9a5b;
+                    --cws-btn-hover-bg:    #6b705c;
+                    --cws-btn-hover-text:  #f5f3ee;
+
+                    --cws-input-bg:        #f5f3ee;
+                    --cws-input-border:    #b7b7a4;
+                    --cws-input-text:      #344e41;
+
+                    --cws-cell-border:     #a3b18a;
+                    --cws-cell-neutral:    #f5f3ee;
+                    --cws-cell-green:      #8a9a5b;
+                    --cws-cell-blue:       #5b7c99;
+
+                    --cws-hr:              #b7b7a4;
+                    --cws-small-text:      #6b705c;
+
+                    --cws-switch-off:      #b7b7a4;
+                    --cws-switch-on:       #6b705c;
+                    --cws-switch-knob:     #f5f3ee;
+                }
+
+                /* ---------- Тёмная тема ---------- */
+                #cws_7dl_div.cws-dark {
+                    --cws-header-bg:       #3a5a40;
+                    --cws-header-text:     #f5f3ee;
+                    --cws-panel-bg:        #2d332a;
+                    --cws-panel-text:      #dad7cd;
+                    --cws-border:          #4a5240;
+
+                    --cws-btn-bg:          #4a5240;
+                    --cws-btn-text:        #dad7cd;
+                    --cws-btn-border:      #6b705c;
+                    --cws-btn-hover-bg:    #6b705c;
+                    --cws-btn-hover-text:  #f5f3ee;
+
+                    --cws-input-bg:        #1f251d;
+                    --cws-input-border:    #4a5240;
+                    --cws-input-text:      #dad7cd;
+
+                    --cws-cell-border:     #4a5240;
+                    --cws-cell-neutral:    #3d4436;
+                    --cws-cell-green:      #a3b18a;
+                    --cws-cell-blue:       #7ba7c9;
+
+                    --cws-hr:              #4a5240;
+                    --cws-small-text:      #a3b18a;
+
+                    --cws-switch-off:      #4a5240;
+                    --cws-switch-on:       #a3b18a;
+                    --cws-switch-knob:     #dad7cd;
+                }
+
+                /* ---------- Общие стили ---------- */
                 #cws_7dl_div {
                     position: fixed;
                     top: 80px;
                     left: 80px;
-                    background: #fff;
-                    border: 1px solid #555;
-                    border-radius: 5px;
+                    background-color: var(--cws-panel-bg);
+                    color: var(--cws-panel-text);
+                    border: 1px solid var(--cws-border);
+                    border-radius: 6px;
                     box-shadow: 0 4px 16px rgba(0,0,0,.35);
                     z-index: 10000;
                     min-width: 260px;
                     max-width: 380px;
                     font-size: 12px;
-                    color: #000;
+                    transition: background-color .25s, color .25s, border-color .25s;
                 }
                 #cws_7dl_header {
-                    background: #4a6fa5;
-                    color: #fff;
-                    padding: 5px 8px;
+                    background-color: var(--cws-header-bg);
+                    color: var(--cws-header-text);
+                    padding: 6px 10px;
                     cursor: move;
                     display: flex;
                     align-items: center;
@@ -229,36 +292,145 @@
                     user-select: none;
                     -webkit-user-select: none;
                     touch-action: none;
-                    border-radius: 4px 4px 0 0;
+                    border-radius: 5px 5px 0 0;
                     font-weight: bold;
+                    transition: background-color .25s, color .25s;
                 }
-                #cws_7dl_header .cws_7dl_btns { display: flex; gap: 4px; }
-                #cws_7dl_header button {
+                #cws_7dl_header .cws_7dl_btns {
+                    display: flex;
+                    gap: 4px;
+                }
+                /* Кнопки шапки — прозрачные, с контрастной рамкой */
+                #cws_7dl_div #cws_7dl_header button {
                     background: transparent;
-                    border: 1px solid #fff;
-                    color: #fff;
+                    border: 1px solid var(--cws-header-text);
+                    color: var(--cws-header-text);
                     cursor: pointer;
                     padding: 0 6px;
-                    font-size: 11px;
-                    line-height: 16px;
-                    border-radius: 2px;
+                    font-size: 12px;
+                    line-height: 18px;
+                    min-width: 22px;
+                    border-radius: 3px;
+                    transition: background-color .15s;
                 }
-                #cws_7dl_header button:hover { background: rgba(255,255,255,.2); }
+                #cws_7dl_div #cws_7dl_header button:hover {
+                    background: rgba(255,255,255,.2);
+                }
                 #cws_7dl_content {
-                    padding: 8px;
+                    padding: 8px 10px 10px;
                     max-height: 70vh;
                     overflow-y: auto;
+                    transition: background-color .25s, color .25s;
                 }
                 #cws_7dl_content.collapsed { display: none; }
-                #cws_7dl_table { border-collapse: collapse; }
-                #cws_7dl_table td {
+
+                #cws_7dl_div #cws_7dl_table {
+                    border-collapse: collapse;
+                    background-color: transparent;
+                }
+                #cws_7dl_div #cws_7dl_table td {
                     height: 30px;
                     width: 22px;
-                    border: 1px solid #999;
+                    border: 1px solid var(--cws-cell-border);
+                    transition: background-color .25s, border-color .25s;
                 }
-                #cws_7dl_table .highlight--1 { background-color: #fff; }
-                #cws_7dl_table .highlight-0  { background-color: #92d050; }
-                #cws_7dl_table .highlight-1  { background-color: #002060; }
+                #cws_7dl_div #cws_7dl_table .highlight--1 { background-color: var(--cws-cell-neutral); }
+                #cws_7dl_div #cws_7dl_table .highlight-0  { background-color: var(--cws-cell-green); }
+                #cws_7dl_div #cws_7dl_table .highlight-1  { background-color: var(--cws-cell-blue); }
+
+                #cws_7dl_div hr {
+                    border: none;
+                    border-top: 1px solid var(--cws-hr);
+                    margin: 8px 0;
+                }
+                #cws_7dl_div small {
+                    color: var(--cws-small-text);
+                    transition: color .25s;
+                }
+
+                /* Обычные кнопки в теле панели */
+                #cws_7dl_div button {
+                    background-color: var(--cws-btn-bg);
+                    color: var(--cws-btn-text);
+                    border: 1px solid var(--cws-btn-border);
+                    border-radius: 3px;
+                    padding: 3px 8px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    transition: background-color .15s, color .15s, border-color .15s;
+                }
+                #cws_7dl_div button:hover {
+                    background-color: var(--cws-btn-hover-bg);
+                    color: var(--cws-btn-hover-text);
+                    border-color: var(--cws-btn-hover-bg);
+                }
+
+                /* Поля ввода / select */
+                #cws_7dl_div select,
+                #cws_7dl_div input[type="text"] {
+                    background-color: var(--cws-input-bg);
+                    color: var(--cws-input-text);
+                    border: 1px solid var(--cws-input-border);
+                    border-radius: 3px;
+                    padding: 2px 4px;
+                    font-size: 12px;
+                    transition: background-color .25s, color .25s, border-color .25s;
+                }
+
+                /* ---------- Тумблер «Обновлять при переходе» ---------- */
+                .cws-observe-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 6px 0 2px;
+                    cursor: pointer;
+                    user-select: none;
+                    -webkit-user-select: none;
+                }
+                .cws-switch {
+                    position: relative;
+                    display: inline-block;
+                    width: 36px;
+                    height: 20px;
+                    flex-shrink: 0;
+                }
+                .cws-switch input {
+                    opacity: 0;
+                    width: 0;
+                    height: 0;
+                    position: absolute;
+                    margin: 0;
+                }
+                .cws-slider {
+                    position: absolute;
+                    inset: 0;
+                    background-color: var(--cws-switch-off);
+                    border-radius: 20px;
+                    transition: background-color .25s;
+                }
+                .cws-slider::before {
+                    content: "";
+                    position: absolute;
+                    height: 14px;
+                    width: 14px;
+                    left: 3px;
+                    top: 3px;
+                    background-color: var(--cws-switch-knob);
+                    border-radius: 50%;
+                    transition: transform .25s, background-color .25s;
+                    box-shadow: 0 1px 2px rgba(0,0,0,.25);
+                }
+                .cws-switch input:checked + .cws-slider {
+                    background-color: var(--cws-switch-on);
+                }
+                .cws-switch input:checked + .cws-slider::before {
+                    transform: translateX(16px);
+                }
+                .cws-switch-label {
+                    color: var(--cws-panel-text);
+                    font-size: 12px;
+                    transition: color .25s;
+                }
             </style>
         `);
 
@@ -266,7 +438,10 @@
         let html = '<div id="cws_7dl_div">'
             + '<div id="cws_7dl_header">'
             +   '<span>Карта 7ДЛ</span>'
-            +   '<div class="cws_7dl_btns"><button id="cws_7dl_toggle" title="Свернуть">—</button></div>'
+            +   '<div class="cws_7dl_btns">'
+            +     '<button id="cws_7dl_theme" title="Тёмная тема">☾</button>'
+            +     '<button id="cws_7dl_toggle" title="Свернуть">—</button>'
+            +   '</div>'
             + '</div>'
             + '<div id="cws_7dl_content">'
             +   '<div style="padding-bottom:.5em" id="cws_7dl_loc_type">Неизвестный лабиринт</div>'
@@ -294,7 +469,13 @@
             +     '<input type="text" id="cws_7dl_loc_choice" value="' + loc_choice + '" size="4"> '
             +     '<button id="cws_7dl_right">&gt; МП</button></div>'
             +     '<hr></div>'
-            +   '<div><button id="cws_7dl_observe">Обновлять при переходе</button></div>'
+            +   '<label class="cws-observe-row" title="Автоматически обновлять карту при переходе">'
+            +     '<span class="cws-switch">'
+            +       '<input type="checkbox" id="cws_7dl_observe">'
+            +       '<span class="cws-slider"></span>'
+            +     '</span>'
+            +     '<span class="cws-switch-label">Обновлять при переходе</span>'
+            +   '</label>'
             + '</div>'
             + '</div>';
         document.body.insertAdjacentHTML('beforeend', html);
@@ -304,11 +485,12 @@
         const panelHeader   = document.getElementById('cws_7dl_header');
         const panelContent  = document.getElementById('cws_7dl_content');
         const toggleBtn     = document.getElementById('cws_7dl_toggle');
+        const themeBtn      = document.getElementById('cws_7dl_theme');
         const locTypeEl     = document.getElementById('cws_7dl_loc_type');
         const labSelect     = document.getElementById('cws_7dl_lab_choice');
         const leftBtn       = document.getElementById('cws_7dl_left');
         const rightBtn      = document.getElementById('cws_7dl_right');
-        const observeBtn    = document.getElementById('cws_7dl_observe');
+        const observeCheckbox = document.getElementById('cws_7dl_observe');
         const locInput      = document.getElementById('cws_7dl_loc_choice');
         const observeAlt    = document.getElementById('cws_7dl_observe_alt');
 
@@ -351,6 +533,21 @@
             toggleBtn.textContent = '+';
             toggleBtn.title = 'Развернуть';
         }
+
+        // ---------- Восстановление темы ----------
+        if (getSettings('theme', 'light') === 'dark') {
+            panel.classList.add('cws-dark');
+            themeBtn.textContent = '☀';
+            themeBtn.title = 'Светлая тема';
+        }
+
+        // ---------- Переключение темы ----------
+        themeBtn.addEventListener('click', function () {
+            const isDark = panel.classList.toggle('cws-dark');
+            themeBtn.textContent = isDark ? '☀' : '☾';
+            themeBtn.title = isDark ? 'Светлая тема' : 'Тёмная тема';
+            setSettings('theme', isDark ? 'dark' : 'light');
+        });
 
         // ---------- Drag ----------
         (function () {
@@ -439,10 +636,14 @@
             switchLoc(loc_choice + (isRightSide ? 1 : -1));
         });
 
-        observeBtn.addEventListener('click', function () {
-            if (!ready) return;
-            if (isObserving) stopObserving();
-            else startObserving();
+        // ---------- Тумблер автообновления ----------
+        observeCheckbox.addEventListener('change', function () {
+            if (!ready) {
+                this.checked = isObserving;
+                return;
+            }
+            if (this.checked && !isObserving) startObserving();
+            else if (!this.checked && isObserving) stopObserving();
         });
 
         locInput.addEventListener('input', function () {
@@ -573,7 +774,7 @@
             if (!cages) return;
             isObserving = true;
             setSettings('is_observing', true);
-            observeBtn.textContent = 'НЕ обновлять при переходе';
+            observeCheckbox.checked = true;
             observeAlt.style.display = 'none';
             refreshMap();
             mapObserver.observe(cages, {
@@ -586,10 +787,16 @@
             if (!isObserving) return;
             isObserving = false;
             setSettings('is_observing', false);
-            observeBtn.textContent = 'Обновлять при переходе';
+            observeCheckbox.checked = false;
             observeAlt.style.display = '';
             refreshMap();
             mapObserver.disconnect();
+        }
+
+        // Начальное отображение состояния тумблера/ручной панели
+        if (isObserving) {
+            observeCheckbox.checked = true;
+            observeAlt.style.display = 'none';
         }
 
         // ---------- Загрузка данных карты ----------
