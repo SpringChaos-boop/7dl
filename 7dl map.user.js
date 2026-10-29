@@ -6,8 +6,8 @@
 // @supportURL   https://catwar.su/cat1705753
 // @match        *://catwar.net/*
 // @match        *://catwar.su/*
-// @updateURL    https://raw.githubusercontent.com/SpringChaos-boop/7dl/refs/heads/main/7dl%20map.js
-// @downloadURL  https://raw.githubusercontent.com/SpringChaos-boop/7dl/refs/heads/main/7dl%20map.js
+// @updateURL    https://github.com/SpringChaos-boop/7dl/raw/refs/heads/main/7dl%20map.user.js
+// @downloadURL  https://github.com/SpringChaos-boop/7dl/raw/refs/heads/main/7dl%20map.user.js
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // @require      https://reireirei72.github.io/zero-t-18883/shed/jquery-3.4.1.min.js
